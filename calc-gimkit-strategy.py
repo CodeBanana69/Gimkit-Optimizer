@@ -2,7 +2,7 @@ from math import ceil
 import sys
 
 initial_money = 1
-goal = -1
+goal = 9000000000
 comprehensive = False
 max_num_steps = -1
 if len(sys.argv) > 1:
@@ -14,17 +14,16 @@ if len(sys.argv) > 1:
             if len(sys.argv) > 4:
                 max_num_steps = int(sys.argv[4])
 
-# Tuple: (Money, Money per Q, Streak, Multiplier, Discount, Mini Bonus, Mega Bonus, Rebooter)
 
 moneys = [1, 5, 50, 100, 500, 2000, 5000, 10000, 250000, 1000000]
 money_costs = [
     [0, 10, 100, 1000, 10000, 75000, 300000, 1000000, 10000000, 100000000],
     [0, 8, 75, 750, 7500, 56250, 225000, 750000, 7500000, 75000000]
 ]
-streaks = [2, 20, 100, 200, 1000, 4000, 10000, 50000, 1000000, 5000000]
+streaks = [1, 3, 10, 50, 250, 1200, 6500, 35000, 175000, 1000000]
 streak_costs = [
-    [0, 15, 150, 1500, 15000, 115000, 450000, 1500000, 15000000, 200000000],
-    [0, 12, 113, 1125, 11250, 86250, 337500, 1125000, 11250000, 150000000]
+    [0, 20, 200, 2000, 20000, 200000, 2000000, 20000000, 200000000, 2000000000],
+    [0, 15, 150, 1500, 15000, 150000, 1500000, 15000000, 150000000, 1500000000]
 ]
 multipliers = [1, 1.5, 2, 3, 5, 8, 12, 18, 30, 100]
 multiplier_costs = [
@@ -35,12 +34,14 @@ multiplier_costs = [
 benefit_arrays = [0, moneys, streaks, multipliers]
 cost_arrays = [0, money_costs, streak_costs, multiplier_costs]
 
-powerup_base_costs = [0, 0, 0, 0, 250, 20, 50, 1000]
-powerup_percentage_costs = [0, 0, 0, 0, .16, .03, .06, .30]
+powerup_base_costs = [0, 0, 0, 0, 250, 20, 50, 1000, 500, 1200]
+powerup_percentage_costs = [0, 0, 0, 0, .16, .03, .06, .30, .06, .32]
 
 def calc_powerup_cost(index, amount):
     return 5*int(ceil((powerup_percentage_costs[index]*amount+powerup_base_costs[index])/5))
 
+
+# ?
 def calc_optimal_benefit(arr, cur_benefit, amount):
     while cur_benefit+1 < len(arr) and amount >= arr[cur_benefit+1]:
         cur_benefit += 1
@@ -48,8 +49,10 @@ def calc_optimal_benefit(arr, cur_benefit, amount):
 
 def calc_gain_per_q(tpl):
     return int(ceil((moneys[tpl[1]]+streaks[tpl[2]])*multipliers[tpl[3]]))
+
+# Tuple: (Money, Money per Q, Streak, Multiplier, Discount, Mini Bonus, Mega Bonus, Rebooter, [Minute to Win it, Quadgrader])
             
-cur_queue = [(initial_money+1, 0, 0, 0, 0, 0, 0, 0)]
+cur_queue = [(initial_money+1, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
 prev_cur_queue = []
 next_queue = []
 prev_next_queue = []
@@ -67,7 +70,7 @@ while True:
                 prev_next_queue.append(state)
                 if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
             
-        for powerup_index in range(4, 8):
+        for powerup_index in range(4, 10):
             powerup_cost = calc_powerup_cost(powerup_index, state[0])
             if state[powerup_index] == 0 and powerup_cost < state[0]:
                 next_queue.append((state[0]-powerup_cost,)+state[1:powerup_index]+(1,)+state[(powerup_index+1):])
@@ -94,10 +97,26 @@ while True:
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[7] == 1:
-            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1)+state[8:])
+            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]))+state[9:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
-    
+
+        if state[8] == 1:
+            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:8]+(-1,)+state[9:])
+            prev_next_queue.append(state)
+            if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
+
+        if state[5] == 1 and state[6] == 1 and state[8] == 1:
+            next_queue.append((state[0]+20*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:8] + (-1,) + state[9:])
+            prev_next_queue.append(state)
+            if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
+
+        if state[9] == 1:
+            next_queue.append((state[0],)+(min(9, state[1]+1), min(9, state[2]+1), min(9, state[3]+1))+(state[4:9])+(-1,)+state[10:])
+            prev_next_queue.append(state)
+            if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
+
+        
     sorted_lsts = sorted(zip(next_queue, prev_next_queue))
     next_queue = [x for x,_ in sorted_lsts]
     prev_next_queue = [x for _,x in sorted_lsts]
@@ -106,7 +125,7 @@ while True:
     for j, state in enumerate(next_queue):
         indexes_to_be_removed = []
         for k, state2 in enumerate(cur_queue):
-            if state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7]:
+            if state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9]:
                 indexes_to_be_removed.insert(0, k)
         for index in indexes_to_be_removed:
             del cur_queue[index]
@@ -144,18 +163,28 @@ while cur_state in prev:
     cur_state = prev[cur_state]
 lst.insert(0, cur_state)
 print("Number of Steps:", len(lst))
+numQuestions = 0
 for i, tpl in enumerate(lst):
     print(str(i+1)+". ", end="")
     if i == 0 or lst[i-1][0]+calc_gain_per_q(lst[i-1]) == tpl[0]:
         print("Answer 1 question, bringing your total up to $"+str(tpl[0]))
+        numQuestions += 1
     elif lst[i-1][0]+2*calc_gain_per_q(lst[i-1]) == tpl[0]:
         print("Answer 1 question using the mini bonus, bringing your total up to $"+str(tpl[0]))
+        numQuestions += 1
     elif lst[i-1][0]+5*calc_gain_per_q(lst[i-1]) == tpl[0]:
         print("Answer 1 question using the mega bonus, bringing your total up to $"+str(tpl[0]))
+        numQuestions += 1
     elif lst[i-1][0]+10*calc_gain_per_q(lst[i-1]) == tpl[0]:
         print("Answer 1 question using the mini and mega bonuses, bringing your total up to $"+str(tpl[0]))
+        numQuestions += 1
+    elif lst[i-1][0]+20*calc_gain_per_q(lst[i-1]) == tpl[0]:
+        print("Answer 1 question using the mini, minute, and mega bonuses, bringing your total up to $"+str(tpl[0]))
+        numQuestions += 1
     elif tpl[7] < lst[i-1][7]:
         print("Use the rebooter to regenerate your previously bought powerups.")
+    elif tpl[1] > lst[i-1][1] and tpl[2] > lst[i-1][2]:
+        print("Use the Quadgrader to increase all your levels by one.")
     elif tpl[1] > lst[i-1][1]:
         print("Buy the Level "+str(tpl[1]+1)+" ($"+str(moneys[tpl[1]])+") money per question upgrade for $"+str(money_costs[tpl[4]][tpl[1]])+", making your total $"+str(tpl[0]))
     elif tpl[2] > lst[i-1][2]:
@@ -170,6 +199,12 @@ for i, tpl in enumerate(lst):
         print("Buy the mega bonus for $"+str(calc_powerup_cost(6, lst[i-1][0]))+", making your total $"+str(tpl[0]))
     elif tpl[7] > lst[i-1][7]:
         print("Buy the rebooter for $"+str(calc_powerup_cost(7, lst[i-1][0]))+", making your total $"+str(tpl[0]))
+    elif tpl[8] > lst[i-1][8]:
+        print("Buy the minute to win it for $"+str(calc_powerup_cost(8, lst[i-1][0]))+", making your total $"+str(tpl[0]))
+    elif tpl[9] > lst[i-1][9]:
+        print("Buy the Quadgrader for $"+str(calc_powerup_cost(9, lst[i-1][0]))+", making your total $"+str(tpl[0]))
     else:
         print("ERROR: We don't know what to do! But here's a hint:", lst[i-1], tpl)
+    
     # print(tpl)
+print("Number of Questions: " + str(numQuestions))
