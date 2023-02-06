@@ -97,7 +97,7 @@ while True:
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[7] == 1:
-            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]))+state[9:])
+            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]), abs(state[9]))+state[10:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
