@@ -1,7 +1,7 @@
 from math import ceil
 import sys
 
-initial_money = 1
+initial_money = 0
 goal = -1
 comprehensive = False
 max_num_steps = -1
@@ -48,11 +48,11 @@ def calc_optimal_benefit(arr, cur_benefit, amount):
     return cur_benefit
 
 def calc_gain_per_q(tpl):
-    return int(ceil((moneys[tpl[1]]+streaks[tpl[2]])*multipliers[tpl[3]]))
+    return int(ceil((moneys[tpl[1]]+streaks[tpl[2]]*tpl[10])*multipliers[tpl[3]]))
 
-# Tuple: (Money, Money per Q, Streak, Multiplier, Discount, Mini Bonus, Mega Bonus, Rebooter, [Minute to Win it, Quadgrader])
+# Tuple: (Money, Money per Q, Streak, Multiplier, Discount, Mini Bonus, Mega Bonus, Rebooter, [Minute to Win it, Quadgrader, Streak Count])
             
-cur_queue = [(initial_money+1, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+cur_queue = [(initial_money+1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
 prev_cur_queue = []
 next_queue = []
 prev_next_queue = []
@@ -66,53 +66,53 @@ while True:
         for benefit_index in range(1, 4):
             optimal_benefit = calc_optimal_benefit(cost_arrays[benefit_index][state[4]], state[benefit_index], state[0])
             for possible_benefit in range(state[benefit_index]+1 if comprehensive else max(state[benefit_index]+1, optimal_benefit), optimal_benefit+1):
-                next_queue.append((state[0]-cost_arrays[benefit_index][state[4]][possible_benefit],)+state[1:benefit_index]+(possible_benefit,)+state[(benefit_index+1):])
+                next_queue.append((state[0]-cost_arrays[benefit_index][state[4]][possible_benefit],)+state[1:benefit_index]+(possible_benefit,)+state[(benefit_index+1):10]+(1,)+state[11:])
                 prev_next_queue.append(state)
                 if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
             
         for powerup_index in range(4, 10):
             powerup_cost = calc_powerup_cost(powerup_index, state[0])
             if state[powerup_index] == 0 and powerup_cost < state[0]:
-                next_queue.append((state[0]-powerup_cost,)+state[1:powerup_index]+(1,)+state[(powerup_index+1):])
+                next_queue.append((state[0]-powerup_cost,)+state[1:powerup_index]+(1,)+state[(powerup_index+1):10]+(state[10]+1,)+state[11:])
                 prev_next_queue.append(state)
                 if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
             
-        next_queue.append((state[0]+calc_gain_per_q(state),)+state[1:])
+        next_queue.append((state[0]+calc_gain_per_q(state),)+state[1:10]+(state[10]+1,)+state[11:])
         prev_next_queue.append(state)
         if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[5] == 1:
-            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:5]+(-1,)+state[6:])
+            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:5]+(-1,)+state[6:10]+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[6] == 1:
-            next_queue.append((state[0]+5*calc_gain_per_q(state),)+state[1:6]+(-1,)+state[7:])
+            next_queue.append((state[0]+5*calc_gain_per_q(state),)+state[1:6]+(-1,)+state[7:10]+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[5] == 1 and state[6] == 1:
-            next_queue.append((state[0]+10*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:])
+            next_queue.append((state[0]+10*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:10]+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[7] == 1:
-            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]), abs(state[9]))+state[10:])
+            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]), abs(state[9]))+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[8] == 1:
-            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:8]+(-1,)+state[9:])
+            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:8]+(-1,)+state[9:10]+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[5] == 1 and state[6] == 1 and state[8] == 1:
-            next_queue.append((state[0]+20*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:8] + (-1,) + state[9:])
+            next_queue.append((state[0]+20*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:8] + (-1,) + state[9:] +(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[9] == 1:
-            next_queue.append((state[0],)+(min(9, state[1]+1), min(9, state[2]+1), min(9, state[3]+1))+(state[4:9])+(-1,)+state[10:])
+            next_queue.append((state[0],)+(min(9, state[1]+1), min(9, state[2]+1), min(9, state[3]+1))+(state[4:9])+(-1,)+(state[10]+1,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
@@ -125,7 +125,7 @@ while True:
     for j, state in enumerate(next_queue):
         indexes_to_be_removed = []
         for k, state2 in enumerate(cur_queue):
-            if state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9]:
+            if state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9] and state2[10] <= state[10]:
                 indexes_to_be_removed.insert(0, k)
         for index in indexes_to_be_removed:
             del cur_queue[index]
