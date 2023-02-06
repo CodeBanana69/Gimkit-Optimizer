@@ -2,7 +2,7 @@ from math import ceil
 import sys
 
 initial_money = 1
-goal = 9000000000
+goal = -1
 comprehensive = False
 max_num_steps = -1
 if len(sys.argv) > 1:
