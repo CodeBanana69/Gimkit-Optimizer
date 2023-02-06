@@ -125,7 +125,7 @@ while True:
     for j, state in enumerate(next_queue):
         indexes_to_be_removed = []
         for k, state2 in enumerate(cur_queue):
-            if state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9] and state2[10] <= state[10]:
+            if (state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9]) or (state2[1] + 2 <= state[1] and state2[2] + 2 <= state[2] and state2[3] + 2 <= state[3]):
                 indexes_to_be_removed.insert(0, k)
         for index in indexes_to_be_removed:
             del cur_queue[index]
@@ -139,7 +139,7 @@ while True:
         prev[state] = prev_cur_queue[j]
         
         if goal == -1:
-            if state[1] == 9 and state[2] == 9 and state[3] == 9:
+            if state[1] >= 9 and state[2] >= 9 and state[3] >= 9:
                 final_state = state
                 break
 
