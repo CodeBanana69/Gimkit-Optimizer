@@ -40,8 +40,6 @@ powerup_percentage_costs = [0, 0, 0, 0, .16, .03, .06, .30, .06, .32]
 def calc_powerup_cost(index, amount):
     return 5*int(ceil((powerup_percentage_costs[index]*amount+powerup_base_costs[index])/5))
 
-
-# ?
 def calc_optimal_benefit(arr, cur_benefit, amount):
     while cur_benefit+1 < len(arr) and amount >= arr[cur_benefit+1]:
         cur_benefit += 1
@@ -50,6 +48,18 @@ def calc_optimal_benefit(arr, cur_benefit, amount):
 def calc_gain_per_q(tpl):
     return int(ceil((moneys[tpl[1]]+streaks[tpl[2]]*tpl[10])*multipliers[tpl[3]]))
 
+def is_completely_dominant(state, state2):
+    if (state[1] >= state2[1] + 2 + comprehensive and state[2] >= state2[2] + 2 + comprehensive and state[3] >= state2[3] + 2 + comprehensive):
+        return True
+    for i in range(len(state)):
+        if (i != 10 and state[i] < state2[i]):
+            return False
+    for i in range(len(state)):
+        if (i != 10 and state[i] != state2[i]):
+            break
+        if (i == 10 and state[i] > state2[i]):
+            return True
+    return True
 # Tuple: (Money, Money per Q, Streak, Multiplier, Discount, Mini Bonus, Mega Bonus, Rebooter, [Minute to Win it, Quadgrader, Streak Count])
             
 cur_queue = [(initial_money+1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)]
@@ -65,57 +75,56 @@ while True:
     for state in cur_queue:
         for benefit_index in range(1, 4):
             optimal_benefit = calc_optimal_benefit(cost_arrays[benefit_index][state[4]], state[benefit_index], state[0])
-            for possible_benefit in range(state[benefit_index]+1 if comprehensive else max(state[benefit_index]+1, optimal_benefit), optimal_benefit+1):
-                next_queue.append((state[0]-cost_arrays[benefit_index][state[4]][possible_benefit],)+state[1:benefit_index]+(possible_benefit,)+state[(benefit_index+1):10]+(1,)+state[11:])
+            for possible_benefit in range(state[benefit_index]+1 if comprehensive else max(state[benefit_index]+1, optimal_benefit), optimal_benefit + 1):
+                next_queue.append((state[0]-cost_arrays[benefit_index][state[4]][possible_benefit],)+state[1:benefit_index]+(possible_benefit,)+state[(benefit_index+1):10]+(0,)+state[11:])
                 prev_next_queue.append(state)
                 if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
             
         for powerup_index in range(4, 10):
             powerup_cost = calc_powerup_cost(powerup_index, state[0])
             if state[powerup_index] == 0 and powerup_cost < state[0]:
-                next_queue.append((state[0]-powerup_cost,)+state[1:powerup_index]+(1,)+state[(powerup_index+1):10]+(state[10]+1,)+state[11:])
+                next_queue.append((state[0]-powerup_cost,)+state[1:powerup_index]+(1,)+state[(powerup_index+1):10]+(state[10],)+state[11:])
                 prev_next_queue.append(state)
                 if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
             
-        next_queue.append((state[0]+calc_gain_per_q(state),)+state[1:10]+(state[10]+1,)+state[11:])
+        next_queue.append((state[0]+calc_gain_per_q(state),)+state[1:10]+(min(state[10] + 1, 99),)+state[11:])
         prev_next_queue.append(state)
         if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
-        
+
         if state[5] == 1:
-            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:5]+(-1,)+state[6:10]+(state[10]+1,)+state[11:])
+            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:5]+(-1,)+state[6:10]+(state[10],)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[6] == 1:
-            next_queue.append((state[0]+5*calc_gain_per_q(state),)+state[1:6]+(-1,)+state[7:10]+(state[10]+1,)+state[11:])
+            next_queue.append((state[0]+5*calc_gain_per_q(state),)+state[1:6]+(-1,)+state[7:10]+(state[10],)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[5] == 1 and state[6] == 1:
-            next_queue.append((state[0]+10*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:10]+(state[10]+1,)+state[11:])
+            next_queue.append((state[0]+10*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:10]+(state[10],)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
         
         if state[7] == 1:
-            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]), abs(state[9]))+(state[10]+1,)+state[11:])
+            next_queue.append(state[0:4]+(abs(state[4]), abs(state[5]), abs(state[6]), -1, abs(state[8]), abs(state[9]))+(state[10],)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[8] == 1:
-            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:8]+(-1,)+state[9:10]+(state[10]+1,)+state[11:])
+            next_queue.append((state[0]+2*calc_gain_per_q(state),)+state[1:8]+(-1,)+state[9:10]+(state[10],)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[5] == 1 and state[6] == 1 and state[8] == 1:
-            next_queue.append((state[0]+20*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+state[7:8] + (-1,) + state[9:] +(state[10]+1,)+state[11:])
+            next_queue.append((state[0]+20*calc_gain_per_q(state),)+state[1:5]+(-1,-1)+ state[7:8] + (-1,) + (state[9], state[10]) + state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
 
         if state[9] == 1:
-            next_queue.append((state[0],)+(min(9, state[1]+1), min(9, state[2]+1), min(9, state[3]+1))+(state[4:9])+(-1,)+(state[10]+1,)+state[11:])
+            next_queue.append((state[0],)+(min(9, state[1]+1), min(9, state[2]+1), min(9, state[3]+1))+(state[4:9])+(-1,)+(0,)+state[11:])
             prev_next_queue.append(state)
             if i == debug_i: print("K", next_queue[-1], prev_next_queue[-1])
-
         
     sorted_lsts = sorted(zip(next_queue, prev_next_queue))
     next_queue = [x for x,_ in sorted_lsts]
@@ -125,7 +134,7 @@ while True:
     for j, state in enumerate(next_queue):
         indexes_to_be_removed = []
         for k, state2 in enumerate(cur_queue):
-            if (state2[1] <= state[1] and state2[2] <= state[2] and state2[3] <= state[3] and state2[4] <= state[4] and state2[5] <= state[5] and state2[6] <= state[6] and state2[7] <= state[7] and state2[8] <= state[8] and state2[9] <= state[9]) or (state2[1] + 2 <= state[1] and state2[2] + 2 <= state[2] and state2[3] + 2 <= state[3]):
+            if (is_completely_dominant(state, state2)):
                 indexes_to_be_removed.insert(0, k)
         for index in indexes_to_be_removed:
             del cur_queue[index]
@@ -139,7 +148,7 @@ while True:
         prev[state] = prev_cur_queue[j]
         
         if goal == -1:
-            if state[1] >= 9 and state[2] >= 9 and state[3] >= 9:
+            if state[1] == 9 and state[2] == 9 and state[3] == 9:
                 final_state = state
                 break
 
@@ -205,6 +214,9 @@ for i, tpl in enumerate(lst):
         print("Buy the Quadgrader for $"+str(calc_powerup_cost(9, lst[i-1][0]))+", making your total $"+str(tpl[0]))
     else:
         print("ERROR: We don't know what to do! But here's a hint:", lst[i-1], tpl)
-    
     # print(tpl)
+print(lst[-1][1])
+print(lst[-1][2])
+print(lst[-1][3])
+print(calc_gain_per_q(final_state))
 print("Number of Questions: " + str(numQuestions))
